@@ -154,7 +154,7 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 		if len(n.items) >= n.MaxItems() {
 			return n.split(item)
 		}
-		_, ok = n.items.insert(item)
+		n.items.insert(i, item)
 		return
 	}
 	if i < len(n.items) {
@@ -222,37 +222,30 @@ func (n *Node) split(item Item) (median Item, left *Node, right *Node, ok bool) 
 	}
 	left = n
 	if compare < 0 {
-		left.items.insert(item)
+		i, _ := left.items.search(item)
+		left.items.insert(i, item)
 	} else {
-		right.items.insert(item)
+		i, _ := right.items.search(item)
+		right.items.insert(i, item)
 	}
 	return
 }
 
 type items []Item
 
-func (s *items) insert(item Item) (index int, ok bool) {
-	for i := 0; i < len(*s); i++ {
-		if item.Less((*s)[i]) {
-			*s = append(*s, nil)
-			copy((*s)[i+1:], (*s)[i:])
-			(*s)[i] = item
-			return i, true
-		}
-		if !(*s)[i].Less(item) {
-			(*s)[i] = item
-			return i, false
-		}
+func (s *items) insert(index int, item Item) {
+	*s = append(*s, nil)
+	if index < len(*s) {
+		copy((*s)[index+1:], (*s)[index:])
 	}
-	*s = append(*s, item)
-	return len(*s) - 1, true
+	(*s)[index] = item
 }
 
-func (s items) search(item Item) (index int, ok bool) {
-	i := sort.Search(len(s), func(i int) bool {
-		return item.Less(s[i])
+func (s *items) search(item Item) (index int, ok bool) {
+	i := sort.Search(len(*s), func(i int) bool {
+		return item.Less((*s)[i])
 	})
-	if i > 0 && !s[i-1].Less(item) {
+	if i > 0 && !(*s)[i-1].Less(item) {
 		return i - 1, true
 	}
 	return i, false
