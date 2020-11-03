@@ -145,6 +145,11 @@ func (n *Node) Children() []*Node {
 }
 
 func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *Node, ok bool) {
+	i, existed := n.items.search(item)
+	if existed {
+		n.items[i] = item
+		return nil, nil, nil, false
+	}
 	if len(n.children) == 0 || nonleaf {
 		if len(n.items) >= n.MaxItems() {
 			return n.split(item)
@@ -152,49 +157,43 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 		_, ok = n.items.insert(item)
 		return
 	}
-	for i := 0; i < len(n.items); i++ {
-		if item.Less(n.items[i]) {
-			median, left, right, ok = n.children[i].insert(item, false)
-			if median != nil {
-				m := median
-				r := right
-				median, left, right, ok = n.insert(median, true)
-				index, found := n.items.search(m)
+	if i < len(n.items) {
+		median, left, right, ok = n.children[i].insert(item, false)
+		if median != nil {
+			m := median
+			r := right
+			median, left, right, ok = n.insert(median, true)
+			index, found := n.items.search(m)
+			if found {
+				n.children.insert(index+1, r)
+				return
+			}
+			if right != nil {
+				index, found := right.items.search(m)
 				if found {
-					n.children.insert(index+1, r)
-					return
-				}
-				if right != nil {
-					index, found := right.items.search(m)
-					if found {
-						right.children.insert(index+1, r)
-					}
+					right.children.insert(index+1, r)
 				}
 			}
-			return
 		}
-		if !n.items[i].Less(item) {
-			n.items[i] = item
-			return nil, nil, nil, false
-		} else if i == len(n.items)-1 {
-			median, left, right, ok = n.children[i+1].insert(item, false)
-			if median != nil {
-				m := median
-				r := right
-				median, left, right, ok = n.insert(median, true)
-				index, found := n.items.search(m)
+		return
+	}
+	if i == len(n.items) {
+		median, left, right, ok = n.children[i].insert(item, false)
+		if median != nil {
+			m := median
+			r := right
+			median, left, right, ok = n.insert(median, true)
+			index, found := n.items.search(m)
+			if found {
+				n.children.insert(index+1, r)
+				return
+			}
+			if right != nil {
+				index, found := right.items.search(m)
 				if found {
-					n.children.insert(index+1, r)
-					return
-				}
-				if right != nil {
-					index, found := right.items.search(m)
-					if found {
-						right.children.insert(index+1, r)
-					}
+					right.children.insert(index+1, r)
 				}
 			}
-			return
 		}
 	}
 	return
