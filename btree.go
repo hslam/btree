@@ -17,6 +17,11 @@
 //
 package btree
 
+import (
+	"fmt"
+	"sort"
+)
+
 // Item represents a value in the tree.
 type Item interface {
 	// Less compares whether the current item is less than the given Item.
@@ -151,8 +156,20 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 		if item.Less(n.items[i]) {
 			median, left, right, ok = n.children[i].insert(item, false)
 			if median != nil {
-				n.children.insert(i, left, right)
-				return n.insert(median, true)
+				m := median
+				r := right
+				median, left, right, ok = n.insert(median, true)
+				index, found := n.items.search(m)
+				if found {
+					n.children.insert(index+1, r)
+					return
+				}
+				if right != nil {
+					index, found := right.items.search(m)
+					if found {
+						right.children.insert(index+1, r)
+					}
+				}
 			}
 			return
 		}
@@ -162,8 +179,20 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 		} else if i == len(n.items)-1 {
 			median, left, right, ok = n.children[i+1].insert(item, false)
 			if median != nil {
-				n.children.insert(i+1, left, right)
-				return n.insert(median, true)
+				m := median
+				r := right
+				median, left, right, ok = n.insert(median, true)
+				index, found := n.items.search(m)
+				if found {
+					n.children.insert(index+1, r)
+					return
+				}
+				if right != nil {
+					index, found := right.items.search(m)
+					if found {
+						right.children.insert(index+1, r)
+					}
+				}
 			}
 			return
 		}
@@ -184,6 +213,7 @@ func (n *Node) split(item Item) (median Item, left *Node, right *Node, ok bool) 
 		n.items[index] = item
 		return nil, nil, nil, false
 	}
+	ok = true
 	right = newNode(n.MaxItems())
 	right.items = append(right.items, n.items[index+1:]...)
 	n.items = n.items[:index]
@@ -194,11 +224,9 @@ func (n *Node) split(item Item) (median Item, left *Node, right *Node, ok bool) 
 	left = n
 	if compare < 0 {
 		left.items.insert(item)
-		ok = true
-		return
+	} else {
+		right.items.insert(item)
 	}
-	right.items.insert(item)
-	ok = true
 	return
 }
 
@@ -221,13 +249,34 @@ func (s *items) insert(item Item) (index int, ok bool) {
 	return len(*s) - 1, true
 }
 
+func (s items) search(item Item) (index int, ok bool) {
+	i := sort.Search(len(s), func(i int) bool {
+		return item.Less(s[i])
+	})
+	if i > 0 && !s[i-1].Less(item) {
+		return i - 1, true
+	}
+	return i, false
+}
+
 type children []*Node
 
-func (s *children) insert(index int, left, right *Node) {
-	(*s)[index] = left
+func (s *children) insert(index int, node *Node) {
 	*s = append(*s, nil)
-	if index+1 < len(*s) {
-		copy((*s)[index+2:], (*s)[index+1:])
+	if index < len(*s) {
+		copy((*s)[index+1:], (*s)[index:])
 	}
-	(*s)[index+1] = right
+	(*s)[index] = node
+}
+
+func (s *children) string() (str string) {
+	for i := 0; i < len(*s); i++ {
+		if (*s)[i] != nil {
+			str += fmt.Sprintf("%v", (*s)[i].items)
+		} else {
+			str += fmt.Sprintf("  ")
+		}
+
+	}
+	return
 }
