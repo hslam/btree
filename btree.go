@@ -46,17 +46,17 @@ func (a String) Less(b Item) bool {
 
 // Tree represents a B-tree.
 type Tree struct {
-	maxItems int
-	length   int
-	root     *Node
+	degree int
+	length int
+	root   *Node
 }
 
-// New returns a new B-tree with the max number of items.
-func New(maxItems int) *Tree {
-	if maxItems < 2 {
-		panic("bad maxItems")
+// New returns a new B-tree with the given degree.
+func New(degree int) *Tree {
+	if degree <= 1 {
+		panic("bad degree")
 	}
-	return &Tree{maxItems: maxItems}
+	return &Tree{degree: degree}
 }
 
 // Length returns the number of items currently in the B-tree.
@@ -71,12 +71,12 @@ func (t *Tree) Root() *Node {
 
 // MaxItems returns the max number of items to allow per Node.
 func (t *Tree) MaxItems() int {
-	return t.maxItems
+	return t.degree*2 - 1
 }
 
 // MinItems returns the min number of items to allow per node (ignored for the root node).
 func (t *Tree) MinItems() int {
-	return t.maxItems / 2
+	return t.degree - 1
 }
 
 // Insert inserts the item into the B-tree.
