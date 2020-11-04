@@ -157,42 +157,20 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 		n.items.insert(i, item)
 		return
 	}
-	if i < len(n.items) {
-		median, left, right, ok = n.children[i].insert(item, false)
-		if median != nil {
-			m := median
-			r := right
-			median, left, right, ok = n.insert(median, true)
-			index, found := n.items.search(m)
-			if found {
-				n.children.insert(index+1, r)
-				return
-			}
-			if right != nil {
-				index, found := right.items.search(m)
-				if found {
-					right.children.insert(index+1, r)
-				}
-			}
+	median, left, right, ok = n.children[i].insert(item, false)
+	if median != nil {
+		m := median
+		r := right
+		median, left, right, ok = n.insert(median, true)
+		index, found := n.items.search(m)
+		if found {
+			n.children.insert(index+1, r)
+			return
 		}
-		return
-	}
-	if i == len(n.items) {
-		median, left, right, ok = n.children[i].insert(item, false)
-		if median != nil {
-			m := median
-			r := right
-			median, left, right, ok = n.insert(median, true)
-			index, found := n.items.search(m)
+		if right != nil {
+			index, found := right.items.search(m)
 			if found {
-				n.children.insert(index+1, r)
-				return
-			}
-			if right != nil {
-				index, found := right.items.search(m)
-				if found {
-					right.children.insert(index+1, r)
-				}
+				right.children.insert(index+1, r)
 			}
 		}
 	}
