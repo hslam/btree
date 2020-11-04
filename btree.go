@@ -90,8 +90,9 @@ func (t *Tree) Insert(item Item) {
 		t.length++
 		return
 	}
-	median, left, right, ok := t.root.insert(item, false)
+	median, right, ok := t.root.insert(item, false)
 	if median != nil {
+		left := t.root
 		t.root = newNode(t.MaxItems())
 		t.root.items = append(t.root.items, median)
 		t.root.children = append(t.root.children, left, right)
@@ -144,11 +145,11 @@ func (n *Node) Children() []*Node {
 	return n.children
 }
 
-func (n *Node) insert(item Item, nonleaf bool) (median Item, left, right *Node, ok bool) {
+func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
 	i, existed := n.items.search(item)
 	if existed {
 		n.items[i] = item
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 	if len(n.children) == 0 || nonleaf {
 		if len(n.items) >= n.MaxItems() {
@@ -157,11 +158,11 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left, right *Node, 
 		n.items.insert(i, item)
 		return
 	}
-	median, left, right, ok = n.children[i].insert(item, false)
+	median, right, ok = n.children[i].insert(item, false)
 	if median != nil {
 		m := median
 		r := right
-		median, left, right, ok = n.insert(median, true)
+		median, right, ok = n.insert(median, true)
 		index, found := n.items.search(m)
 		if found {
 			n.children.insert(index+1, r)
@@ -177,7 +178,7 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left, right *Node, 
 	return
 }
 
-func (n *Node) split(item Item) (median Item, left, right *Node, ok bool) {
+func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 	i := n.MinItems()
 	median = n.items[i]
 	compare := 0
@@ -188,7 +189,7 @@ func (n *Node) split(item Item) (median Item, left, right *Node, ok bool) {
 	}
 	if compare == 0 {
 		n.items[i] = item
-		return nil, nil, nil, false
+		return nil, nil, false
 	}
 	ok = true
 	right = newNode(n.MaxItems())
@@ -198,10 +199,9 @@ func (n *Node) split(item Item) (median Item, left, right *Node, ok bool) {
 		right.children = append(right.children, n.children[i+1:]...)
 		n.children = n.children[:i+1]
 	}
-	left = n
 	if compare < 0 {
-		index, _ := left.items.search(item)
-		left.items.insert(index, item)
+		index, _ := n.items.search(item)
+		n.items.insert(index, item)
 	} else {
 		index, _ := right.items.search(item)
 		right.items.insert(index, item)
