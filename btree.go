@@ -153,12 +153,12 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 		return
 	}
 	if len(n.children) == 0 || nonleaf {
-		if len(n.items) >= n.MaxItems() {
-			return n.split(item)
+		if len(n.items) < n.MaxItems() {
+			n.items.insert(i, item)
+			ok = true
+			return
 		}
-		n.items.insert(i, item)
-		ok = true
-		return
+		return n.split(item)
 	}
 	median, right, ok = n.children[i].insert(item, false)
 	if median != nil {
