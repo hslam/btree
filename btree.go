@@ -149,13 +149,15 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 	i, existed := n.items.search(item)
 	if existed {
 		n.items[i] = item
-		return nil, nil, false
+		ok = false
+		return
 	}
 	if len(n.children) == 0 || nonleaf {
 		if len(n.items) >= n.MaxItems() {
 			return n.split(item)
 		}
 		n.items.insert(i, item)
+		ok = true
 		return
 	}
 	median, right, ok = n.children[i].insert(item, false)
@@ -189,7 +191,8 @@ func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 	}
 	if compare == 0 {
 		n.items[i] = item
-		return nil, nil, false
+		ok = false
+		return
 	}
 	ok = true
 	right = newNode(n.MaxItems())
