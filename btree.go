@@ -144,7 +144,7 @@ func (n *Node) Children() []*Node {
 	return n.children
 }
 
-func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *Node, ok bool) {
+func (n *Node) insert(item Item, nonleaf bool) (median Item, left, right *Node, ok bool) {
 	i, existed := n.items.search(item)
 	if existed {
 		n.items[i] = item
@@ -177,9 +177,9 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, left *Node, right *
 	return
 }
 
-func (n *Node) split(item Item) (median Item, left *Node, right *Node, ok bool) {
-	index := n.MinItems()
-	median = n.items[index]
+func (n *Node) split(item Item) (median Item, left, right *Node, ok bool) {
+	i := n.MinItems()
+	median = n.items[i]
 	compare := 0
 	if item.Less(median) {
 		compare = -1
@@ -187,24 +187,24 @@ func (n *Node) split(item Item) (median Item, left *Node, right *Node, ok bool) 
 		compare = 1
 	}
 	if compare == 0 {
-		n.items[index] = item
+		n.items[i] = item
 		return nil, nil, nil, false
 	}
 	ok = true
 	right = newNode(n.MaxItems())
-	right.items = append(right.items, n.items[index+1:]...)
-	n.items = n.items[:index]
+	right.items = append(right.items, n.items[i+1:]...)
+	n.items = n.items[:i]
 	if len(n.children) > 0 {
-		right.children = append(right.children, n.children[index+1:]...)
-		n.children = n.children[:index+1]
+		right.children = append(right.children, n.children[i+1:]...)
+		n.children = n.children[:i+1]
 	}
 	left = n
 	if compare < 0 {
-		i, _ := left.items.search(item)
-		left.items.insert(i, item)
+		index, _ := left.items.search(item)
+		left.items.insert(index, item)
 	} else {
-		i, _ := right.items.search(item)
-		right.items.insert(i, item)
+		index, _ := right.items.search(item)
+		right.items.insert(index, item)
 	}
 	return
 }
