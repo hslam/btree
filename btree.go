@@ -96,6 +96,8 @@ func (t *Tree) Insert(item Item) {
 		t.root = newNode(t.MaxItems())
 		t.root.items = append(t.root.items, median)
 		t.root.children = append(t.root.children, left, right)
+		left.parent = t.root
+		right.parent = t.root
 	}
 	if ok {
 		t.length++
@@ -107,6 +109,7 @@ func (t *Tree) Insert(item Item) {
 type Node struct {
 	items    items
 	children children
+	parent   *Node
 }
 
 func newNode(maxItems int) *Node {
@@ -145,6 +148,14 @@ func (n *Node) Children() []*Node {
 	return n.children
 }
 
+// Parent returns the parent node.
+func (n *Node) Parent() *Node {
+	if n == nil {
+		return nil
+	}
+	return n.parent
+}
+
 func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
 	i, existed := n.items.search(item)
 	if existed {
@@ -168,12 +179,14 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 		index, found := n.items.search(m)
 		if found {
 			n.children.insert(index+1, r)
+			r.parent = n
 			return
 		}
 		if right != nil {
 			index, found := right.items.search(m)
 			if found {
 				right.children.insert(index+1, r)
+				r.parent = right
 			}
 		}
 	}
@@ -190,6 +203,9 @@ func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 	if len(n.children) > 0 {
 		right.children = append(right.children, n.children[i+1:]...)
 		n.children = n.children[:i+1]
+	}
+	for _, v := range right.children {
+		v.parent = right
 	}
 	if item.Less(median) {
 		index, _ := n.items.search(item)
