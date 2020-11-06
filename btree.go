@@ -79,6 +79,21 @@ func (t *Tree) MinItems() int {
 	return t.degree - 1
 }
 
+// Search searches the Item of the B-tree.
+func (t *Tree) Search(item Item) Item {
+	n, i := t.root.search(item)
+	if n != nil && i > -1 {
+		return n.items[i]
+	}
+	return nil
+}
+
+// SearchNode searches the node of the B-tree with the item.
+func (t *Tree) SearchNode(item Item) *Node {
+	n, _ := t.root.search(item)
+	return n
+}
+
 // Insert inserts the item into the B-tree.
 func (t *Tree) Insert(item Item) {
 	if item == nil {
@@ -134,20 +149,6 @@ func newNode(maxItems int) *Node {
 	return &Node{items: make([]Item, 0, maxItems), children: make([]*Node, 0, maxItems+1)}
 }
 
-func (n *Node) maxItems() int {
-	if n == nil {
-		return 0
-	}
-	return cap(n.items)
-}
-
-func (n *Node) minItems() int {
-	if n == nil {
-		return 0
-	}
-	return cap(n.items) / 2
-}
-
 // Items returns the items of this node.
 func (n *Node) Items() []Item {
 	if n == nil {
@@ -170,6 +171,33 @@ func (n *Node) Parent() *Node {
 		return nil
 	}
 	return n.parent
+}
+
+func (n *Node) maxItems() int {
+	if n == nil {
+		return 0
+	}
+	return cap(n.items)
+}
+
+func (n *Node) minItems() int {
+	if n == nil {
+		return 0
+	}
+	return cap(n.items) / 2
+}
+
+func (n *Node) search(item Item) (*Node, int) {
+	if n != nil {
+		i, existed := n.items.search(item)
+		if existed {
+			return n, i
+		}
+		if i < len(n.children) {
+			return n.children[i].search(item)
+		}
+	}
+	return nil, -1
 }
 
 func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
