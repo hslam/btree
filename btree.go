@@ -105,6 +105,24 @@ func (t *Tree) Insert(item Item) {
 	return
 }
 
+// Clear removes all items from the B-tree.
+func (t *Tree) Clear() {
+	t.root = nil
+	t.length = 0
+}
+
+// Delete deletes the node of the B-tree with the item.
+func (t *Tree) Delete(item Item) {
+	var ok bool
+	t.root, ok = t.root.delete(item, -1)
+	if t.root != nil && t.root.parent != nil {
+		t.root.parent = nil
+	}
+	if ok {
+		t.length--
+	}
+}
+
 // Node represents a node in the B-tree.
 type Node struct {
 	items    items
@@ -116,16 +134,14 @@ func newNode(maxItems int) *Node {
 	return &Node{items: make([]Item, 0, maxItems), children: make([]*Node, 0, maxItems+1)}
 }
 
-// MaxItems returns the max number of items to allow per Node.
-func (n *Node) MaxItems() int {
+func (n *Node) maxItems() int {
 	if n == nil {
 		return 0
 	}
 	return cap(n.items)
 }
 
-// MinItems returns the min number of items to allow per node (ignored for the root node).
-func (n *Node) MinItems() int {
+func (n *Node) minItems() int {
 	if n == nil {
 		return 0
 	}
@@ -164,7 +180,7 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 		return
 	}
 	if len(n.children) == 0 || nonleaf {
-		if len(n.items) < n.MaxItems() {
+		if len(n.items) < n.maxItems() {
 			n.items.insert(i, item)
 			ok = true
 			return
@@ -193,11 +209,161 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 	return
 }
 
+func (n *Node) delete(item Item, childIndex int) (root *Node, ok bool) {
+	if n == nil {
+		return nil, false
+	}
+	i, existed := n.items.search(item)
+	if existed {
+		if len(n.children) == 0 {
+			n.items.remove(i)
+			if len(n.items) > 0 {
+				root = n
+			}
+			ok = true
+			if n.parent != nil && len(n.items) < n.minItems() {
+				n.rebalance(childIndex, false)
+			}
+			return
+		}
+		leftMax := n.children[i].max()
+		rightMin := n.children[i+1].min()
+		if len(leftMax.items) > len(rightMin.items) {
+			newSeparator := leftMax.items[len(leftMax.items)-1]
+			n.items[i] = newSeparator
+			item = newSeparator
+		} else {
+			newSeparator := rightMin.items[0]
+			n.items[i] = newSeparator
+			item = newSeparator
+			i++
+		}
+	}
+	_, ok = n.children[i].delete(item, i)
+	root = n
+	if n.parent == nil {
+		if len(n.items) == 0 {
+			if len(n.children) > 0 {
+				root = n.children[0]
+			} else {
+				root = nil
+			}
+		}
+	} else {
+		if len(n.items) < n.minItems() {
+			n.rebalance(childIndex, true)
+		}
+	}
+	return
+}
+
+func (n *Node) rebalance(childIndex int, nonleaf bool) {
+	rightSiblingItems := n.rightSiblingItems(childIndex)
+	if rightSiblingItems > n.minItems() {
+		n.rotateLeft(childIndex, nonleaf)
+		return
+	}
+	leftSiblingItems := n.leftSiblingItems(childIndex)
+	if leftSiblingItems > n.minItems() {
+		n.rotateRight(childIndex, nonleaf)
+		return
+	}
+	if rightSiblingItems > 0 {
+		n.mergeLeft(childIndex, nonleaf)
+	} else if leftSiblingItems > 0 {
+		n.mergeRight(childIndex, nonleaf)
+	}
+}
+
+func (n *Node) rightSiblingItems(childIndex int) int {
+	if childIndex >= len(n.parent.children)-1 {
+		return 0
+	}
+	return len(n.parent.children[childIndex+1].items)
+}
+
+func (n *Node) leftSiblingItems(childIndex int) int {
+	if childIndex <= 0 {
+		return 0
+	}
+	return len(n.parent.children[childIndex-1].items)
+}
+
+func (n *Node) rotateLeft(childIndex int, nonleaf bool) {
+	p := n.parent
+	n.items.insert(len(n.items), p.items[childIndex])
+	rightSibling := p.children[childIndex+1]
+	p.items[childIndex] = rightSibling.items[0]
+	rightSibling.items.remove(0)
+	if nonleaf {
+		n.children.insert(len(n.children), rightSibling.children[0])
+		n.children[len(n.children)-1].parent = n
+		rightSibling.children.remove(0)
+	}
+}
+
+func (n *Node) rotateRight(childIndex int, nonleaf bool) {
+	p := n.parent
+	n.items.insert(0, p.items[childIndex-1])
+	leftSibling := p.children[childIndex-1]
+	p.items[childIndex-1] = leftSibling.items[len(leftSibling.items)-1]
+	leftSibling.items.remove(len(leftSibling.items) - 1)
+	if nonleaf {
+		n.children.insert(0, leftSibling.children[len(leftSibling.children)-1])
+		n.children[0].parent = n
+		leftSibling.children.remove(len(leftSibling.children) - 1)
+	}
+}
+
+func (n *Node) mergeLeft(childIndex int, nonleaf bool) {
+	p := n.parent
+	n.items.insert(len(n.items), p.items[childIndex])
+	right := p.children[childIndex+1]
+	n.items.appendRight(right.items)
+	p.items.remove(childIndex)
+	p.children.remove(childIndex + 1)
+	if nonleaf {
+		n.children.appendRight(right.children)
+		for _, v := range right.children {
+			v.parent = n
+		}
+	}
+}
+
+func (n *Node) mergeRight(childIndex int, nonleaf bool) {
+	p := n.parent
+	leftSibling := p.children[childIndex-1]
+	leftSibling.items.insert(len(leftSibling.items), p.items[childIndex-1])
+	leftSibling.items.appendRight(n.items)
+	p.items.remove(childIndex - 1)
+	p.children.remove(childIndex)
+	if nonleaf {
+		leftSibling.children.appendRight(n.children)
+		for _, v := range n.children {
+			v.parent = leftSibling
+		}
+	}
+}
+
+func (n *Node) min() *Node {
+	if len(n.children) > 0 {
+		return n.children[0].min()
+	}
+	return n
+}
+
+func (n *Node) max() *Node {
+	if len(n.children) > 0 {
+		return n.children[len(n.children)-1].max()
+	}
+	return n
+}
+
 func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 	ok = true
-	i := n.MinItems()
+	i := n.minItems()
 	median = n.items[i]
-	right = newNode(n.MaxItems())
+	right = newNode(n.maxItems())
 	right.items = append(right.items, n.items[i+1:]...)
 	n.items = n.items[:i]
 	if len(n.children) > 0 {
@@ -227,6 +393,16 @@ func (s *items) insert(index int, item Item) {
 	(*s)[index] = item
 }
 
+func (s *items) appendRight(i items) {
+	*s = append(*s, i...)
+}
+
+func (s *items) remove(index int) {
+	copy((*s)[index:], (*s)[index+1:])
+	(*s)[len(*s)-1] = nil
+	*s = (*s)[:len(*s)-1]
+}
+
 func (s *items) search(item Item) (index int, ok bool) {
 	i := sort.Search(len(*s), func(i int) bool {
 		return item.Less((*s)[i])
@@ -245,6 +421,16 @@ func (s *children) insert(index int, node *Node) {
 		copy((*s)[index+1:], (*s)[index:])
 	}
 	(*s)[index] = node
+}
+
+func (s *children) appendRight(i children) {
+	*s = append(*s, i...)
+}
+
+func (s *children) remove(index int) {
+	copy((*s)[index:], (*s)[index+1:])
+	(*s)[len(*s)-1] = nil
+	*s = (*s)[:len(*s)-1]
 }
 
 func (s *children) string() (str string) {
