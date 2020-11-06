@@ -3,7 +3,8 @@
 
 // Package btree implements a B-tree.
 //
-// B-tree properties: https://en.wikipedia.org/wiki/B-tree
+// According to Knuth's definition, a B-tree of order m is a tree which satisfies
+// the following properties: https://en.wikipedia.org/wiki/B-tree
 //
 // 1. Every node has at most m children.
 //

@@ -1,12 +1,14 @@
 # btree
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/hslam/btree)](https://pkg.go.dev/github.com/hslam/btree)
 [![Build Status](https://travis-ci.org/hslam/btree.svg?branch=master)](https://travis-ci.org/hslam/btree)
+[![codecov](https://codecov.io/gh/hslam/btree/branch/master/graph/badge.svg)](https://codecov.io/gh/hslam/btree)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hslam/btree)](https://goreportcard.com/report/github.com/hslam/btree)
 [![LICENSE](https://img.shields.io/github/license/hslam/btree.svg?style=flat-square)](https://github.com/hslam/btree/blob/master/LICENSE)
 
 Package btree implements a B-tree.
 
-**[Properties](https://en.wikipedia.org/wiki/B-tree "properties")**
+#### Definition
+According to Knuth's definition, a **[B-tree](https://en.wikipedia.org/wiki/B-tree "B-tree")** of order m is a tree which satisfies the following properties:
 * Every node has at most m children.
 * Every non-leaf node (except root) has at least ⌈m/2⌉ child nodes.
 * The root has at least two children if it is not a leaf node.
