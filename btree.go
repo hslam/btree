@@ -18,7 +18,6 @@
 package btree
 
 import (
-	"fmt"
 	"sort"
 )
 
@@ -267,19 +266,19 @@ func (n *Node) delete(item Item, childIndex int) (root *Node, ok bool) {
 			i++
 		}
 	}
-	_, ok = n.children[i].delete(item, i)
 	root = n
-	if n.parent == nil {
-		if len(n.items) == 0 {
-			if len(n.children) > 0 {
-				root = n.children[0]
-			} else {
-				root = nil
+	if len(n.children) > i {
+		_, ok = n.children[i].delete(item, i)
+		if n.parent == nil {
+			if len(n.items) == 0 {
+				if len(n.children) > 0 {
+					root = n.children[0]
+				}
 			}
-		}
-	} else {
-		if len(n.items) < n.minItems() {
-			n.rebalance(childIndex, true)
+		} else {
+			if len(n.items) < n.minItems() {
+				n.rebalance(childIndex, true)
+			}
 		}
 	}
 	return
@@ -459,16 +458,4 @@ func (s *children) remove(index int) {
 	copy((*s)[index:], (*s)[index+1:])
 	(*s)[len(*s)-1] = nil
 	*s = (*s)[:len(*s)-1]
-}
-
-func (s *children) string() (str string) {
-	for i := 0; i < len(*s); i++ {
-		if (*s)[i] != nil {
-			str += fmt.Sprintf("%v", (*s)[i].items)
-		} else {
-			str += fmt.Sprintf("  ")
-		}
-
-	}
-	return
 }
