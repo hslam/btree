@@ -91,17 +91,18 @@ func (t *Tree) Min() *Node {
 
 // Search searches the Item of the B-tree.
 func (t *Tree) Search(item Item) Item {
-	n, i := t.root.search(item)
-	if n != nil && i > -1 {
-		return n.items[i]
+	if t.root == nil {
+		return nil
 	}
-	return nil
+	return t.root.search(item)
 }
 
 // SearchNode searches the node of the B-tree with the item.
 func (t *Tree) SearchNode(item Item) *Node {
-	n, _ := t.root.search(item)
-	return n
+	if t.root == nil {
+		return nil
+	}
+	return t.root.searchNode(item)
 }
 
 // Insert inserts the item into the B-tree.
@@ -235,17 +236,26 @@ func (n *Node) minItems() int {
 	return cap(n.items) / 2
 }
 
-func (n *Node) search(item Item) (*Node, int) {
-	if n != nil {
-		i, existed := n.items.search(item)
-		if existed {
-			return n, i
-		}
-		if i < len(n.children) {
-			return n.children[i].search(item)
-		}
+func (n *Node) search(item Item) Item {
+	i, existed := n.items.search(item)
+	if existed {
+		return n.items[i]
 	}
-	return nil, -1
+	if i < len(n.children) {
+		return n.children[i].search(item)
+	}
+	return nil
+}
+
+func (n *Node) searchNode(item Item) *Node {
+	i, existed := n.items.search(item)
+	if existed {
+		return n
+	}
+	if i < len(n.children) {
+		return n.children[i].searchNode(item)
+	}
+	return nil
 }
 
 func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
@@ -554,11 +564,11 @@ func (s *items) remove(index int) {
 	*s = (*s)[:len(*s)-1]
 }
 
-func (s *items) search(item Item) (index int, ok bool) {
-	i := sort.Search(len(*s), func(i int) bool {
-		return item.Less((*s)[i])
+func (s items) search(item Item) (index int, ok bool) {
+	i := sort.Search(len(s), func(i int) bool {
+		return item.Less(s[i])
 	})
-	if i > 0 && !(*s)[i-1].Less(item) {
+	if i > 0 && !s[i-1].Less(item) {
 		return i - 1, true
 	}
 	return i, false

@@ -150,6 +150,12 @@ func TestEmptyTree(t *testing.T) {
 	if tree.Max() != nil {
 		t.Error("")
 	}
+	if tree.Search(Int(0)) != nil {
+		t.Error("")
+	}
+	if tree.SearchNode(Int(0)) != nil {
+		t.Error("")
+	}
 	if tree.Root().Parent() != nil {
 		t.Error("")
 	}
@@ -177,6 +183,9 @@ func TestEmptyTree(t *testing.T) {
 	tree.Insert(Int(1))
 	tree.Insert(Int(2))
 	tree.Insert(Int(3))
+	if tree.SearchNode(Int(0)) != nil {
+		t.Error("")
+	}
 	tree.Clear()
 	if tree.Length() != 0 {
 		t.Error("")
