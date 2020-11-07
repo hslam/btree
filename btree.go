@@ -79,6 +79,16 @@ func (t *Tree) MinItems() int {
 	return t.degree - 1
 }
 
+// Max returns the max node of the B-tree.
+func (t *Tree) Max() *Node {
+	return t.root.max()
+}
+
+// Min returns the min node of the B-tree.
+func (t *Tree) Min() *Node {
+	return t.root.min()
+}
+
 // Search searches the Item of the B-tree.
 func (t *Tree) Search(item Item) Item {
 	n, i := t.root.search(item)
@@ -374,6 +384,9 @@ func (n *Node) mergeRight(childIndex int, nonleaf bool) {
 }
 
 func (n *Node) min() *Node {
+	if n == nil {
+		return nil
+	}
 	if len(n.children) > 0 {
 		return n.children[0].min()
 	}
@@ -381,6 +394,9 @@ func (n *Node) min() *Node {
 }
 
 func (n *Node) max() *Node {
+	if n == nil {
+		return nil
+	}
 	if len(n.children) > 0 {
 		return n.children[len(n.children)-1].max()
 	}

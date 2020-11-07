@@ -103,6 +103,12 @@ func TestEmptyTree(t *testing.T) {
 	if tree.Root() != nil {
 		t.Error("")
 	}
+	if tree.Min() != nil {
+		t.Error("")
+	}
+	if tree.Max() != nil {
+		t.Error("")
+	}
 	if tree.Root().Parent() != nil {
 		t.Error("")
 	}
