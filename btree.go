@@ -183,6 +183,44 @@ func (n *Node) Parent() *Node {
 	return n.parent
 }
 
+// Iterator returns the iterator with the item index of this node.
+func (n *Node) Iterator(index int) *Iterator {
+	if n == nil {
+		return nil
+	}
+	return &Iterator{node: n, index: index, parentIndex: n.parentIndex()}
+}
+
+// MinIterator returns the iterator with the min item index of this node.
+func (n *Node) MinIterator() *Iterator {
+	if n == nil {
+		return nil
+	}
+	return n.Iterator(0)
+}
+
+// MaxIterator returns the iterator with the max item index of this node.
+func (n *Node) MaxIterator() *Iterator {
+	if n == nil {
+		return nil
+	}
+	return n.Iterator(len(n.items) - 1)
+}
+
+func (n *Node) parentIndex() int {
+	if n == nil {
+		return -1
+	}
+	var parentIndex = -1
+	if n.parent != nil {
+		i, _ := n.parent.items.search(n.items[0])
+		if i < len(n.parent.children) {
+			parentIndex = i
+		}
+	}
+	return parentIndex
+}
+
 func (n *Node) maxItems() int {
 	if n == nil {
 		return 0
@@ -423,6 +461,84 @@ func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 	} else {
 		index, _ := right.items.search(item)
 		right.items.insert(index, item)
+	}
+	return
+}
+
+// Iterator represents an iterator in the B-tree.
+type Iterator struct {
+	index       int
+	parentIndex int
+	node        *Node
+}
+
+// Item returns the item of this iterator.
+func (i *Iterator) Item() Item {
+	if i == nil {
+		return nil
+	}
+	if i.node == nil {
+		return nil
+	}
+	return i.node.items[i.index]
+}
+
+// Last returns the last iterator less than this iterator.
+func (i *Iterator) Last() (last *Iterator) {
+	if i == nil {
+		return nil
+	}
+	if i.node == nil {
+		return nil
+	}
+	n := i.node
+	if len(n.children) > 0 {
+		return n.children[i.index].max().MaxIterator()
+	}
+	if i.index > 0 {
+		i.index--
+		return i
+	}
+	left := n
+	parentIndex := i.parentIndex
+	p := n.parent
+	for p != nil && parentIndex == 0 {
+		left = p
+		parentIndex = p.parentIndex()
+		p = left.parent
+	}
+	if parentIndex > 0 {
+		last = p.Iterator(parentIndex - 1)
+	}
+	return
+}
+
+// Next returns the next iterator more than this iterator.
+func (i *Iterator) Next() (last *Iterator) {
+	if i == nil {
+		return nil
+	}
+	if i.node == nil {
+		return nil
+	}
+	n := i.node
+	if len(n.children) > 0 && i.index < len(n.items) {
+		return n.children[i.index+1].min().MinIterator()
+	}
+	if i.index < len(i.node.items)-1 {
+		i.index++
+		return i
+	}
+	right := n
+	parentIndex := i.parentIndex
+	p := n.parent
+	for p != nil && parentIndex == len(p.children)-1 {
+		right = p
+		parentIndex = p.parentIndex()
+		p = right.parent
+	}
+	if parentIndex > -1 && parentIndex < len(p.items) {
+		last = p.Iterator(parentIndex)
 	}
 	return
 }
