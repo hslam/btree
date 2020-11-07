@@ -477,18 +477,12 @@ func (i *Iterator) Item() Item {
 	if i == nil {
 		return nil
 	}
-	if i.node == nil {
-		return nil
-	}
 	return i.node.items[i.index]
 }
 
 // Last returns the last iterator less than this iterator.
 func (i *Iterator) Last() (last *Iterator) {
 	if i == nil {
-		return nil
-	}
-	if i.node == nil {
 		return nil
 	}
 	n := i.node
@@ -516,9 +510,6 @@ func (i *Iterator) Last() (last *Iterator) {
 // Next returns the next iterator more than this iterator.
 func (i *Iterator) Next() (last *Iterator) {
 	if i == nil {
-		return nil
-	}
-	if i.node == nil {
 		return nil
 	}
 	n := i.node
