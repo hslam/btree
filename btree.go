@@ -247,7 +247,7 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 	return
 }
 
-func (n *Node) delete(item Item, childIndex int) (root *Node, ok bool) {
+func (n *Node) delete(item Item, parentIndex int) (root *Node, ok bool) {
 	if n == nil {
 		return nil, false
 	}
@@ -260,7 +260,7 @@ func (n *Node) delete(item Item, childIndex int) (root *Node, ok bool) {
 			}
 			ok = true
 			if n.parent != nil && len(n.items) < n.minItems() {
-				n.rebalance(childIndex, false)
+				n.rebalance(parentIndex, false)
 			}
 			return
 		}
@@ -288,50 +288,50 @@ func (n *Node) delete(item Item, childIndex int) (root *Node, ok bool) {
 			}
 		} else {
 			if len(n.items) < n.minItems() {
-				n.rebalance(childIndex, true)
+				n.rebalance(parentIndex, true)
 			}
 		}
 	}
 	return
 }
 
-func (n *Node) rebalance(childIndex int, nonleaf bool) {
-	rightSiblingItems := n.rightSiblingItems(childIndex)
+func (n *Node) rebalance(parentIndex int, nonleaf bool) {
+	rightSiblingItems := n.rightSiblingItems(parentIndex)
 	if rightSiblingItems > n.minItems() {
-		n.rotateLeft(childIndex, nonleaf)
+		n.rotateLeft(parentIndex, nonleaf)
 		return
 	}
-	leftSiblingItems := n.leftSiblingItems(childIndex)
+	leftSiblingItems := n.leftSiblingItems(parentIndex)
 	if leftSiblingItems > n.minItems() {
-		n.rotateRight(childIndex, nonleaf)
+		n.rotateRight(parentIndex, nonleaf)
 		return
 	}
 	if rightSiblingItems > 0 {
-		n.mergeLeft(childIndex, nonleaf)
+		n.mergeLeft(parentIndex, nonleaf)
 	} else if leftSiblingItems > 0 {
-		n.mergeRight(childIndex, nonleaf)
+		n.mergeRight(parentIndex, nonleaf)
 	}
 }
 
-func (n *Node) rightSiblingItems(childIndex int) int {
-	if childIndex >= len(n.parent.children)-1 {
+func (n *Node) rightSiblingItems(parentIndex int) int {
+	if parentIndex >= len(n.parent.children)-1 {
 		return 0
 	}
-	return len(n.parent.children[childIndex+1].items)
+	return len(n.parent.children[parentIndex+1].items)
 }
 
-func (n *Node) leftSiblingItems(childIndex int) int {
-	if childIndex <= 0 {
+func (n *Node) leftSiblingItems(parentIndex int) int {
+	if parentIndex <= 0 {
 		return 0
 	}
-	return len(n.parent.children[childIndex-1].items)
+	return len(n.parent.children[parentIndex-1].items)
 }
 
-func (n *Node) rotateLeft(childIndex int, nonleaf bool) {
+func (n *Node) rotateLeft(parentIndex int, nonleaf bool) {
 	p := n.parent
-	n.items.insert(len(n.items), p.items[childIndex])
-	rightSibling := p.children[childIndex+1]
-	p.items[childIndex] = rightSibling.items[0]
+	n.items.insert(len(n.items), p.items[parentIndex])
+	rightSibling := p.children[parentIndex+1]
+	p.items[parentIndex] = rightSibling.items[0]
 	rightSibling.items.remove(0)
 	if nonleaf {
 		n.children.insert(len(n.children), rightSibling.children[0])
@@ -340,11 +340,11 @@ func (n *Node) rotateLeft(childIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) rotateRight(childIndex int, nonleaf bool) {
+func (n *Node) rotateRight(parentIndex int, nonleaf bool) {
 	p := n.parent
-	n.items.insert(0, p.items[childIndex-1])
-	leftSibling := p.children[childIndex-1]
-	p.items[childIndex-1] = leftSibling.items[len(leftSibling.items)-1]
+	n.items.insert(0, p.items[parentIndex-1])
+	leftSibling := p.children[parentIndex-1]
+	p.items[parentIndex-1] = leftSibling.items[len(leftSibling.items)-1]
 	leftSibling.items.remove(len(leftSibling.items) - 1)
 	if nonleaf {
 		n.children.insert(0, leftSibling.children[len(leftSibling.children)-1])
@@ -353,13 +353,13 @@ func (n *Node) rotateRight(childIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) mergeLeft(childIndex int, nonleaf bool) {
+func (n *Node) mergeLeft(parentIndex int, nonleaf bool) {
 	p := n.parent
-	n.items.insert(len(n.items), p.items[childIndex])
-	right := p.children[childIndex+1]
+	n.items.insert(len(n.items), p.items[parentIndex])
+	right := p.children[parentIndex+1]
 	n.items.appendRight(right.items)
-	p.items.remove(childIndex)
-	p.children.remove(childIndex + 1)
+	p.items.remove(parentIndex)
+	p.children.remove(parentIndex + 1)
 	if nonleaf {
 		n.children.appendRight(right.children)
 		for _, v := range right.children {
@@ -368,13 +368,13 @@ func (n *Node) mergeLeft(childIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) mergeRight(childIndex int, nonleaf bool) {
+func (n *Node) mergeRight(parentIndex int, nonleaf bool) {
 	p := n.parent
-	leftSibling := p.children[childIndex-1]
-	leftSibling.items.insert(len(leftSibling.items), p.items[childIndex-1])
+	leftSibling := p.children[parentIndex-1]
+	leftSibling.items.insert(len(leftSibling.items), p.items[parentIndex-1])
 	leftSibling.items.appendRight(n.items)
-	p.items.remove(childIndex - 1)
-	p.children.remove(childIndex)
+	p.items.remove(parentIndex - 1)
+	p.children.remove(parentIndex)
 	if nonleaf {
 		leftSibling.children.appendRight(n.children)
 		for _, v := range n.children {
