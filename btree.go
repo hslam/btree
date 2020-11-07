@@ -18,10 +18,6 @@
 //
 package btree
 
-import (
-	"sort"
-)
-
 // Item represents a value in the tree.
 type Item interface {
 	// Less compares whether the current item is less than the given Item.
@@ -565,9 +561,15 @@ func (s *items) remove(index int) {
 }
 
 func (s items) search(item Item) (index int, ok bool) {
-	i := sort.Search(len(s), func(i int) bool {
-		return item.Less(s[i])
-	})
+	i, j := 0, len(s)
+	for i < j {
+		h := int(uint(i+j) >> 1)
+		if !item.Less(s[h]) {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
 	if i > 0 && !s[i-1].Less(item) {
 		return i - 1, true
 	}
