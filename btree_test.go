@@ -5,10 +5,10 @@ import (
 )
 
 func TestBtree(t *testing.T) {
-	for d := 2; d < 16; d++ {
-		for i := 0; i < 128; i++ {
-			testBtree(128, i, true, d, t)
-			testBtree(128, i, false, d, t)
+	for d := 2; d < 9; d++ {
+		for i := 0; i < 64; i++ {
+			testBtree(64, i, true, d, t)
+			testBtree(64, i, false, d, t)
 		}
 	}
 }
@@ -18,10 +18,12 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 	if r {
 		for i := n - 1; i >= 0; i-- {
 			tree.Insert(Int(i))
+			testTraversal(tree, t)
 		}
 	} else {
 		for i := 0; i < n; i++ {
 			tree.Insert(Int(i))
+			testTraversal(tree, t)
 		}
 	}
 	if tree.Length() != n {
@@ -29,6 +31,7 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 	}
 	testSearch(tree, j, t)
 	tree.Delete(Int(j))
+	testTraversal(tree, t)
 	testNilNode(tree, j, t)
 	if tree.Length() != n-1 {
 		t.Error("")
@@ -36,14 +39,48 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 	if r {
 		for i := n - 1; i >= 0; i-- {
 			tree.Delete(Int(i))
+			testTraversal(tree, t)
 		}
 	} else {
 		for i := 0; i < n; i++ {
 			tree.Delete(Int(i))
+			testTraversal(tree, t)
 		}
 	}
 	if tree.Length() != 0 {
 		t.Error(tree.Length())
+	}
+}
+
+func testTraversal(tree *Tree, t *testing.T) {
+	testIteratorAscend(tree, t)
+	testIteratorDescend(tree, t)
+}
+
+func testIteratorAscend(tree *Tree, t *testing.T) {
+	iter := tree.Min().MinIterator()
+	item := iter.Item()
+	next := iter.Next()
+	for iter != nil && next != nil {
+		if !item.Less(next.Item()) {
+			t.Error(item, next.Item())
+		}
+		iter = next
+		item = iter.Item()
+		next = iter.Next()
+	}
+}
+
+func testIteratorDescend(tree *Tree, t *testing.T) {
+	iter := tree.Max().MaxIterator()
+	item := iter.Item()
+	last := iter.Last()
+	for iter != nil && last != nil {
+		if !last.Item().Less(item) {
+			t.Error(last.Item(), item)
+		}
+		iter = last
+		last = iter.Last()
 	}
 }
 
@@ -116,6 +153,12 @@ func TestEmptyTree(t *testing.T) {
 		t.Error("")
 	}
 	if tree.Root().Items() != nil {
+		t.Error("")
+	}
+	if tree.Root().Iterator(0) != nil {
+		t.Error("")
+	}
+	if tree.Root().parentIndex() != -1 {
 		t.Error("")
 	}
 	if tree.Root().maxItems() != 0 {
