@@ -29,6 +29,10 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 	if tree.Length() != n {
 		t.Error("")
 	}
+	tree.Delete(Int(n))
+	if tree.Length() != n {
+		t.Error("")
+	}
 	testSearch(tree, j, t)
 	tree.Delete(Int(j))
 	testTraversal(tree, t)
