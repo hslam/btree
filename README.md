@@ -55,6 +55,41 @@ func (a String) Less(b btree.Item) bool {
 Hello World
 ```
 
+#### Iterator Example
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/hslam/btree"
+)
+
+func main() {
+	tree := btree.New(2)
+	for i := 0; i < 10; i++ {
+		tree.Insert(Int(i))
+	}
+	iter := tree.Min().MinIterator()
+	for iter != nil {
+		fmt.Printf("%d\t", iter.Item())
+		iter = iter.Next()
+	}
+}
+
+type Int int
+
+func (a Int) Less(b btree.Item) bool {
+	return a < b.(Int)
+}
+```
+#### B-Tree
+<img src="https://raw.githubusercontent.com/hslam/btree/master/btree.png" alt="btree" align=center>
+
+#### Output
+```
+0	1	2	3	4	5	6	7	8	9
+```
+
 ### License
 This package is licensed under a MIT license (Copyright (c) 2020 Meng Huang)
 
