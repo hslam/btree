@@ -9,6 +9,8 @@ func TestBtree(t *testing.T) {
 		for i := 0; i < 64; i++ {
 			testBtree(64, i, true, d, t)
 			testBtree(64, i, false, d, t)
+			testBtreeM(64, i+1, true, d, t)
+			testBtreeM(64, i+1, false, d, t)
 		}
 	}
 }
@@ -44,11 +46,72 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 		for i := n - 1; i >= 0; i-- {
 			tree.Delete(Int(i))
 			testTraversal(tree, t)
+			testNilNode(tree, i, t)
 		}
 	} else {
 		for i := 0; i < n; i++ {
 			tree.Delete(Int(i))
 			testTraversal(tree, t)
+			testNilNode(tree, i, t)
+		}
+	}
+	if tree.Length() != 0 {
+		t.Error(tree.Length())
+	}
+}
+
+func testBtreeM(n, j int, r bool, degree int, t *testing.T) {
+	tree := New(degree)
+	if r {
+		for i := n; i > 0; i-- {
+			tree.Insert(Int(i))
+			testTraversal(tree, t)
+			tree.Insert(Int(-i))
+			testTraversal(tree, t)
+		}
+	} else {
+		for i := 1; i < n+1; i++ {
+			tree.Insert(Int(i))
+			testTraversal(tree, t)
+			tree.Insert(Int(-i))
+			testTraversal(tree, t)
+		}
+	}
+	if tree.Length() != n*2 {
+		t.Error("")
+	}
+	testSearch(tree, j, t)
+	tree.Delete(Int(j))
+	testTraversal(tree, t)
+	testNilNode(tree, j, t)
+	if tree.Length() != n*2-1 {
+		t.Error("")
+	}
+	j = -j
+	testSearch(tree, j, t)
+	tree.Delete(Int(j))
+	testTraversal(tree, t)
+	testNilNode(tree, j, t)
+	if tree.Length() != n*2-2 {
+		t.Error("")
+	}
+	if r {
+		for i := n; i > 0; i-- {
+			tree.Delete(Int(i))
+			testTraversal(tree, t)
+			testNilNode(tree, i, t)
+			tree.Delete(Int(-i))
+			testTraversal(tree, t)
+			testNilNode(tree, -i, t)
+		}
+	} else {
+		for i := 1; i < n+1; i++ {
+			tree.Delete(Int(i))
+			testTraversal(tree, t)
+			testNilNode(tree, i, t)
+			tree.Delete(Int(-i))
+			testTraversal(tree, t)
+			testNilNode(tree, -i, t)
 		}
 	}
 	if tree.Length() != 0 {
