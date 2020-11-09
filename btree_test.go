@@ -57,8 +57,22 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 }
 
 func testTraversal(tree *Tree, t *testing.T) {
+	count := 0
+	testLength(tree.Root(), &count)
+	if tree.Length() != count {
+		t.Error(tree.Length(), count)
+	}
 	testIteratorAscend(tree, t)
 	testIteratorDescend(tree, t)
+}
+
+func testLength(node *Node, count *int) {
+	*count += len(node.Items())
+	if node != nil {
+		for _, child := range node.children {
+			testLength(child, count)
+		}
+	}
 }
 
 func testIteratorAscend(tree *Tree, t *testing.T) {
