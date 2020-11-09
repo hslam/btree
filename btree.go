@@ -514,7 +514,7 @@ func (i *Iterator) Last() (last *Iterator) {
 }
 
 // Next returns the next iterator more than this iterator.
-func (i *Iterator) Next() (last *Iterator) {
+func (i *Iterator) Next() (next *Iterator) {
 	if i == nil {
 		return nil
 	}
@@ -535,7 +535,7 @@ func (i *Iterator) Next() (last *Iterator) {
 		p = right.parent
 	}
 	if parentIndex > -1 && parentIndex < len(p.items) {
-		last = p.Iterator(parentIndex)
+		next = p.Iterator(parentIndex)
 	}
 	return
 }
