@@ -62,6 +62,7 @@ func testTraversal(tree *Tree, t *testing.T) {
 	if tree.Length() != count {
 		t.Error(tree.Length(), count)
 	}
+	traverse(tree.Root(), t)
 	testIteratorAscend(tree, t)
 	testIteratorDescend(tree, t)
 }
@@ -71,6 +72,16 @@ func testLength(node *Node, count *int) {
 	if node != nil {
 		for _, child := range node.children {
 			testLength(child, count)
+		}
+	}
+}
+
+func traverse(node *Node, t *testing.T) {
+	if node != nil {
+		for _, child := range node.children {
+			if child.parent != node {
+				t.Error("")
+			}
 		}
 	}
 }
