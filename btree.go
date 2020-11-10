@@ -486,6 +486,24 @@ func (i *Iterator) Item() Item {
 	return i.node.items[i.index]
 }
 
+// Clone returns the clone of this iterator.
+func (i *Iterator) Clone() *Iterator {
+	if i == nil {
+		return nil
+	}
+	return &Iterator{node: i.node, index: i.index, parentIndex: i.parentIndex}
+}
+
+func (i *Iterator) reset(n *Node, index int) *Iterator {
+	if i == nil || n == nil {
+		return nil
+	}
+	i.index = index
+	i.parentIndex = n.parentIndex()
+	i.node = n
+	return i
+}
+
 // Last returns the last iterator less than this iterator.
 func (i *Iterator) Last() (last *Iterator) {
 	if i == nil {
@@ -493,7 +511,8 @@ func (i *Iterator) Last() (last *Iterator) {
 	}
 	n := i.node
 	if len(n.children) > 0 {
-		return n.children[i.index].max().MaxIterator()
+		max := n.children[i.index].max()
+		return i.reset(max, len(max.items)-1)
 	}
 	if i.index > 0 {
 		i.index--
@@ -508,7 +527,7 @@ func (i *Iterator) Last() (last *Iterator) {
 		p = left.parent
 	}
 	if parentIndex > 0 {
-		last = p.Iterator(parentIndex - 1)
+		return i.reset(p, parentIndex-1)
 	}
 	return
 }
@@ -520,7 +539,8 @@ func (i *Iterator) Next() (next *Iterator) {
 	}
 	n := i.node
 	if len(n.children) > 0 && i.index < len(n.items) {
-		return n.children[i.index+1].min().MinIterator()
+		min := n.children[i.index+1].min()
+		return i.reset(min, 0)
 	}
 	if i.index < len(i.node.items)-1 {
 		i.index++
@@ -535,7 +555,7 @@ func (i *Iterator) Next() (next *Iterator) {
 		p = right.parent
 	}
 	if parentIndex > -1 && parentIndex < len(p.items) {
-		next = p.Iterator(parentIndex)
+		return i.reset(p, parentIndex)
 	}
 	return
 }

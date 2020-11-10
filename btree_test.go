@@ -280,6 +280,26 @@ func TestEmptyTree(t *testing.T) {
 	}
 }
 
+func TestIterator(t *testing.T) {
+	tree := New(2)
+	iter := tree.Max().MaxIterator()
+	if iter.Clone() != nil {
+		t.Error("")
+	} else if iter.reset(nil, 0) != nil {
+		t.Error("")
+	}
+	tree.Insert(Int(1))
+	tree.Insert(Int(2))
+	tree.Insert(Int(3))
+	iter = tree.Max().MaxIterator()
+	clone := iter.Clone()
+	if iter.Item().Less(clone.Item()) {
+		t.Error("")
+	} else if clone.Item().Less(iter.Item()) {
+		t.Error("")
+	}
+}
+
 func TestStringLess(t *testing.T) {
 	a := String("a")
 	b := String("b")
