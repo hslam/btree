@@ -98,7 +98,17 @@ func (t *Tree) SearchNode(item Item) *Node {
 	if t.root == nil {
 		return nil
 	}
-	return t.root.searchNode(item)
+	n, _ := t.root.searchNode(item)
+	return n
+}
+
+// SearchIterator searches the iterator of the B-tree with the item.
+func (t *Tree) SearchIterator(item Item) *Iterator {
+	if t.root == nil {
+		return nil
+	}
+	n, i := t.root.searchNode(item)
+	return n.Iterator(i)
 }
 
 // Insert inserts the item into the B-tree.
@@ -243,15 +253,15 @@ func (n *Node) search(item Item) Item {
 	return nil
 }
 
-func (n *Node) searchNode(item Item) *Node {
+func (n *Node) searchNode(item Item) (*Node, int) {
 	i, existed := n.items.search(item)
 	if existed {
-		return n
+		return n, i
 	}
 	if i < len(n.children) {
 		return n.children[i].searchNode(item)
 	}
-	return nil
+	return nil, -1
 }
 
 func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
