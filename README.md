@@ -1,6 +1,6 @@
 # btree
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/hslam/btree)](https://pkg.go.dev/github.com/hslam/btree)
-[![Build Status](https://travis-ci.org/hslam/btree.svg?branch=master)](https://travis-ci.org/hslam/btree)
+[![Build Status](https://github.com/hslam/btree/workflows/build/badge.svg)](https://github.com/hslam/btree/actions)
 [![codecov](https://codecov.io/gh/hslam/btree/branch/master/graph/badge.svg)](https://codecov.io/gh/hslam/btree)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hslam/btree)](https://goreportcard.com/report/github.com/hslam/btree)
 [![LICENSE](https://img.shields.io/github/license/hslam/btree.svg?style=flat-square)](https://github.com/hslam/btree/blob/master/LICENSE)
