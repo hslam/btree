@@ -313,3 +313,29 @@ func TestStringLess(t *testing.T) {
 		t.Error("")
 	}
 }
+
+func TestReplaceItem(t *testing.T) {
+	tree := New(8)
+	n := 1024
+	for i := 0; i < n; i++ {
+		tree.Insert(Int(i))
+		testTraversal(tree, t)
+		if tree.Length() != i+1 {
+			t.Error("")
+		}
+	}
+	for i := 0; i < n; i++ {
+		tree.Insert(Int(i))
+		testTraversal(tree, t)
+		if tree.Length() != n {
+			t.Error("")
+		}
+	}
+	for i := 0; i < n; i++ {
+		tree.Delete(Int(i))
+		testTraversal(tree, t)
+		if tree.Length() != n-i-1 {
+			t.Error("")
+		}
+	}
+}
