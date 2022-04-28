@@ -16,7 +16,7 @@ func TestBtree(t *testing.T) {
 }
 
 func testBtree(n, j int, r bool, degree int, t *testing.T) {
-	tree := New(degree)
+	tree := New[Int](degree)
 	if r {
 		for i := n - 1; i >= 0; i-- {
 			tree.Insert(Int(i))
@@ -61,7 +61,7 @@ func testBtree(n, j int, r bool, degree int, t *testing.T) {
 }
 
 func testBtreeM(n, j int, r bool, degree int, t *testing.T) {
-	tree := New(degree)
+	tree := New[Int](degree)
 	if r {
 		for i := n; i > 0; i-- {
 			tree.Insert(Int(i))
@@ -119,7 +119,7 @@ func testBtreeM(n, j int, r bool, degree int, t *testing.T) {
 	}
 }
 
-func testTraversal(tree *Tree, t *testing.T) {
+func testTraversal(tree *Tree[Int], t *testing.T) {
 	count := 0
 	testLength(tree.Root(), &count)
 	if tree.Length() != count {
@@ -130,7 +130,7 @@ func testTraversal(tree *Tree, t *testing.T) {
 	testIteratorDescend(tree, t)
 }
 
-func testLength(node *Node, count *int) {
+func testLength(node *Node[Int], count *int) {
 	*count += len(node.Items())
 	if node != nil {
 		for _, child := range node.children {
@@ -139,7 +139,7 @@ func testLength(node *Node, count *int) {
 	}
 }
 
-func traverse(node *Node, t *testing.T) {
+func traverse(node *Node[Int], t *testing.T) {
 	if node != nil {
 		for _, child := range node.children {
 			if child.parent != node {
@@ -149,7 +149,7 @@ func traverse(node *Node, t *testing.T) {
 	}
 }
 
-func testIteratorAscend(tree *Tree, t *testing.T) {
+func testIteratorAscend(tree *Tree[Int], t *testing.T) {
 	iter := tree.Min().MinIterator()
 	item := iter.Item()
 	next := iter.Next()
@@ -163,7 +163,7 @@ func testIteratorAscend(tree *Tree, t *testing.T) {
 	}
 }
 
-func testIteratorDescend(tree *Tree, t *testing.T) {
+func testIteratorDescend(tree *Tree[Int], t *testing.T) {
 	iter := tree.Max().MaxIterator()
 	item := iter.Item()
 	last := iter.Last()
@@ -176,7 +176,7 @@ func testIteratorDescend(tree *Tree, t *testing.T) {
 	}
 }
 
-func testSearch(tree *Tree, j int, t *testing.T) {
+func testSearch(tree *Tree[Int], j int, t *testing.T) {
 	if node := tree.SearchNode(Int(j)); node == nil {
 		t.Error("")
 	} else {
@@ -184,34 +184,27 @@ func testSearch(tree *Tree, j int, t *testing.T) {
 		node.Children()
 		node.Parent()
 	}
-	if item := tree.Search(Int(j)); item == nil {
-		t.Error("")
-	} else if int(item.(Int)) != j {
+	item := tree.Search(Int(j))
+	if int(item) != j {
 		t.Error("")
 	}
 }
 
-func testNilNode(tree *Tree, j int, t *testing.T) {
-	if item := tree.Search(Int(j)); item != nil {
+func testNilNode(tree *Tree[Int], j int, t *testing.T) {
+	if item := tree.Search(Int(j)); item != 0 {
 		t.Error("")
 	}
 }
 
 func TestInsert(t *testing.T) {
-	tree := New(2)
+	tree := New[Int](2)
 	tree.Insert(Int(0))
 	tree.Insert(Int(0))
-	defer func() {
-		if err := recover(); err == nil {
-			t.Error("")
-		}
-	}()
-	tree.Insert(nil)
 }
 
 func TestDegree(t *testing.T) {
 	degree := 2
-	tree := New(degree)
+	tree := New[Int](degree)
 	if tree.MaxItems() != degree*2-1 {
 		t.Error("")
 	}
@@ -223,11 +216,11 @@ func TestDegree(t *testing.T) {
 			t.Error("")
 		}
 	}()
-	New(0)
+	New[Int](0)
 }
 
 func TestEmptyTree(t *testing.T) {
-	tree := New(2)
+	tree := New[Int](2)
 	tree.Delete(Int(0))
 	if tree.Root() != nil {
 		t.Error("")
@@ -238,7 +231,7 @@ func TestEmptyTree(t *testing.T) {
 	if tree.Max() != nil {
 		t.Error("")
 	}
-	if tree.Search(Int(0)) != nil {
+	if tree.Search(Int(0)) != 0 {
 		t.Error("")
 	}
 	if tree.SearchNode(Int(0)) != nil {
@@ -287,7 +280,7 @@ func TestEmptyTree(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	tree := New(2)
+	tree := New[Int](2)
 	iter := tree.Max().MaxIterator()
 	if iter.Clone() != nil {
 		t.Error("")
@@ -315,7 +308,7 @@ func TestStringLess(t *testing.T) {
 }
 
 func TestReplaceItem(t *testing.T) {
-	tree := New(8)
+	tree := New[Int](8)
 	n := 1024
 	for i := 0; i < n; i++ {
 		tree.Insert(Int(i))

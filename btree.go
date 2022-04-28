@@ -19,82 +19,83 @@
 package btree
 
 // Item represents a value in the tree.
-type Item interface {
+type Item[T any] interface {
 	// Less compares whether the current item is less than the given Item.
-	Less(than Item) bool
+	Less(than T) bool
 }
 
 // Int implements the Item interface for int.
 type Int int
 
 // Less returns true if int(a) < int(b).
-func (a Int) Less(b Item) bool {
-	return a < b.(Int)
+func (a Int) Less(b Int) bool {
+	return a < b
 }
 
 // String implements the Item interface for string.
 type String string
 
 // Less returns true if string(a) < string(b).
-func (a String) Less(b Item) bool {
-	return a < b.(String)
+func (a String) Less(b String) bool {
+	return a < b
 }
 
 // Tree represents a B-tree.
-type Tree struct {
+type Tree[T Item[T]] struct {
 	degree int
 	length int
-	root   *Node
+	root   *Node[T]
 }
 
 // New returns a new B-tree with the given degree.
-func New(degree int) *Tree {
+func New[T Item[T]](degree int) *Tree[T] {
 	if degree <= 1 {
 		panic("bad degree")
 	}
-	return &Tree{degree: degree}
+	return &Tree[T]{degree: degree}
 }
 
 // Length returns the number of items currently in the B-tree.
-func (t *Tree) Length() int {
+func (t *Tree[T]) Length() int {
 	return t.length
 }
 
 // Root returns the root node of the B-tree.
-func (t *Tree) Root() *Node {
+func (t *Tree[T]) Root() *Node[T] {
 	return t.root
 }
 
 // MaxItems returns the max number of items to allow per Node.
-func (t *Tree) MaxItems() int {
+func (t *Tree[T]) MaxItems() int {
 	return t.degree*2 - 1
 }
 
 // MinItems returns the min number of items to allow per node (ignored for the root node).
-func (t *Tree) MinItems() int {
+func (t *Tree[T]) MinItems() int {
 	return t.degree - 1
 }
 
 // Max returns the max node of the B-tree.
-func (t *Tree) Max() *Node {
+func (t *Tree[T]) Max() *Node[T] {
 	return t.root.max()
 }
 
 // Min returns the min node of the B-tree.
-func (t *Tree) Min() *Node {
+func (t *Tree[T]) Min() *Node[T] {
 	return t.root.min()
 }
 
 // Search searches the Item of the B-tree.
-func (t *Tree) Search(item Item) Item {
+func (t *Tree[T]) Search(item T) T {
 	if t.root == nil {
-		return nil
+		var x T
+		return x
 	}
 	return t.root.search(item)
 }
 
 // SearchNode searches the node of the B-tree with the item.
-func (t *Tree) SearchNode(item Item) *Node {
+func (t *Tree[T]) SearchNode(item T) *Node[T] {
 	if t.root == nil {
 		return nil
 	}
@@ -103,7 +104,7 @@ func (t *Tree) SearchNode(item Item) *Node {
 }
 
 // SearchIterator searches the iterator of the B-tree with the item.
-func (t *Tree) SearchIterator(item Item) *Iterator {
+func (t *Tree[T]) SearchIterator(item T) *Iterator[T] {
 	if t.root == nil {
 		return nil
 	}
@@ -112,20 +113,17 @@ func (t *Tree) SearchIterator(item Item) *Iterator {
 }
 
 // Insert inserts the item into the B-tree.
-func (t *Tree) Insert(item Item) {
-	if item == nil {
-		panic("nil item being inserted to tree")
-	}
+func (t *Tree[T]) Insert(item T) {
 	if t.root == nil {
-		t.root = newNode(t.MaxItems())
+		t.root = newNode[T](t.MaxItems())
 		t.root.items = append(t.root.items, item)
 		t.length++
 		return
 	}
-	median, right, ok := t.root.insert(item, false)
-	if median != nil {
+	median, right, split, ok := t.root.insert(item, false)
+	if split {
 		left := t.root
-		t.root = newNode(t.MaxItems())
+		t.root = newNode[T](t.MaxItems())
 		t.root.items = append(t.root.items, median)
 		t.root.children = append(t.root.children, left, right)
 		left.parent = t.root
@@ -138,13 +136,13 @@ func (t *Tree) Insert(item Item) {
 }
 
 // Clear removes all items from the B-tree.
-func (t *Tree) Clear() {
+func (t *Tree[T]) Clear() {
 	t.root = nil
 	t.length = 0
 }
 
 // Delete deletes the node of the B-tree with the item.
-func (t *Tree) Delete(item Item) {
+func (t *Tree[T]) Delete(item T) {
 	var ok bool
 	t.root, ok = t.root.delete(item, -1)
 	if t.root != nil && t.root.parent != nil {
@@ -156,18 +154,18 @@ func (t *Tree) Delete(item Item) {
 }
 
 // Node represents a node in the B-tree.
-type Node struct {
-	items    items
-	children children
-	parent   *Node
+type Node[T Item[T]] struct {
+	items    items[T]
+	children children[T]
+	parent   *Node[T]
 }
 
-func newNode(maxItems int) *Node {
-	return &Node{items: make([]Item, 0, maxItems), children: make([]*Node, 0, maxItems+1)}
+func newNode[T Item[T]](maxItems int) *Node[T] {
+	return &Node[T]{items: make([]T, 0, maxItems), children: make([]*Node[T], 0, maxItems+1)}
 }
 
 // Items returns the items of this node.
-func (n *Node) Items() []Item {
+func (n *Node[T]) Items() []T {
 	if n == nil {
 		return nil
 	}
@@ -175,7 +173,7 @@ func (n *Node) Items() []Item {
 }
 
 // Children returns the children of this node.
-func (n *Node) Children() []*Node {
+func (n *Node[T]) Children() []*Node[T] {
 	if n == nil {
 		return nil
 	}
@@ -183,7 +181,7 @@ func (n *Node) Children() []*Node {
 }
 
 // Parent returns the parent node.
-func (n *Node) Parent() *Node {
+func (n *Node[T]) Parent() *Node[T] {
 	if n == nil {
 		return nil
 	}
@@ -191,15 +189,15 @@ func (n *Node) Parent() *Node {
 }
 
 // Iterator returns the iterator with the item index of this node.
-func (n *Node) Iterator(index int) *Iterator {
+func (n *Node[T]) Iterator(index int) *Iterator[T] {
 	if n == nil {
 		return nil
 	}
-	return &Iterator{node: n, index: index, parentIndex: n.parentIndex()}
+	return &Iterator[T]{node: n, index: index, parentIndex: n.parentIndex()}
 }
 
 // MinIterator returns the iterator with the min item index of this node.
-func (n *Node) MinIterator() *Iterator {
+func (n *Node[T]) MinIterator() *Iterator[T] {
 	if n == nil {
 		return nil
 	}
@@ -207,14 +205,14 @@ func (n *Node) MinIterator() *Iterator {
 }
 
 // MaxIterator returns the iterator with the max item index of this node.
-func (n *Node) MaxIterator() *Iterator {
+func (n *Node[T]) MaxIterator() *Iterator[T] {
 	if n == nil {
 		return nil
 	}
 	return n.Iterator(len(n.items) - 1)
 }
 
-func (n *Node) parentIndex() int {
+func (n *Node[T]) parentIndex() int {
 	if n == nil {
 		return -1
 	}
@@ -228,21 +226,21 @@ func (n *Node) parentIndex() int {
 	return parentIndex
 }
 
-func (n *Node) maxItems() int {
+func (n *Node[T]) maxItems() int {
 	if n == nil {
 		return 0
 	}
 	return cap(n.items)
 }
 
-func (n *Node) minItems() int {
+func (n *Node[T]) minItems() int {
 	if n == nil {
 		return 0
 	}
 	return cap(n.items) / 2
 }
 
-func (n *Node) search(item Item) Item {
+func (n *Node[T]) search(item T) T {
 	i, existed := n.items.search(item)
 	if existed {
 		return n.items[i]
@@ -250,10 +248,11 @@ func (n *Node) search(item Item) Item {
 	if i < len(n.children) {
 		return n.children[i].search(item)
 	}
-	return nil
+	var x T
+	return x
 }
 
-func (n *Node) searchNode(item Item) (*Node, int) {
+func (n *Node[T]) searchNode(item T) (*Node[T], int) {
 	i, existed := n.items.search(item)
 	if existed {
 		return n, i
@@ -264,26 +263,28 @@ func (n *Node) searchNode(item Item) (*Node, int) {
 	return nil, -1
 }
 
-func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok bool) {
+func (n *Node[T]) insert(item T, nonleaf bool) (median T, right *Node[T], split, ok bool) {
 	i, existed := n.items.search(item)
 	if existed {
 		n.items[i] = item
 		ok = false
 		return
 	}
+	ok = true
+
 	if len(n.children) == 0 || nonleaf {
 		if len(n.items) < n.maxItems() {
 			n.items.insert(i, item)
-			ok = true
 			return
 		}
-		return n.split(item)
+		median, right, split = n.split(item)
+		return
 	}
-	median, right, ok = n.children[i].insert(item, false)
-	if median != nil {
+	median, right, split, ok = n.children[i].insert(item, false)
+	if split {
 		m := median
 		r := right
-		median, right, ok = n.insert(median, true)
+		median, right, split, ok = n.insert(median, true)
 		index, found := n.items.search(m)
 		if found {
 			n.children.insert(index+1, r)
@@ -301,7 +302,7 @@ func (n *Node) insert(item Item, nonleaf bool) (median Item, right *Node, ok boo
 	return
 }
 
-func (n *Node) delete(item Item, parentIndex int) (root *Node, ok bool) {
+func (n *Node[T]) delete(item T, parentIndex int) (root *Node[T], ok bool) {
 	if n == nil {
 		return nil, false
 	}
@@ -349,7 +350,7 @@ func (n *Node) delete(item Item, parentIndex int) (root *Node, ok bool) {
 	return
 }
 
-func (n *Node) rebalance(parentIndex int, nonleaf bool) {
+func (n *Node[T]) rebalance(parentIndex int, nonleaf bool) {
 	rightSiblingItems := n.rightSiblingItems(parentIndex)
 	if rightSiblingItems > n.minItems() {
 		n.rotateLeft(parentIndex, nonleaf)
@@ -367,21 +368,21 @@ func (n *Node) rebalance(parentIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) rightSiblingItems(parentIndex int) int {
+func (n *Node[T]) rightSiblingItems(parentIndex int) int {
 	if parentIndex >= len(n.parent.children)-1 {
 		return 0
 	}
 	return len(n.parent.children[parentIndex+1].items)
 }
 
-func (n *Node) leftSiblingItems(parentIndex int) int {
+func (n *Node[T]) leftSiblingItems(parentIndex int) int {
 	if parentIndex <= 0 {
 		return 0
 	}
 	return len(n.parent.children[parentIndex-1].items)
 }
 
-func (n *Node) rotateLeft(parentIndex int, nonleaf bool) {
+func (n *Node[T]) rotateLeft(parentIndex int, nonleaf bool) {
 	p := n.parent
 	n.items.insert(len(n.items), p.items[parentIndex])
 	rightSibling := p.children[parentIndex+1]
@@ -394,7 +395,7 @@ func (n *Node) rotateLeft(parentIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) rotateRight(parentIndex int, nonleaf bool) {
+func (n *Node[T]) rotateRight(parentIndex int, nonleaf bool) {
 	p := n.parent
 	n.items.insert(0, p.items[parentIndex-1])
 	leftSibling := p.children[parentIndex-1]
@@ -407,7 +408,7 @@ func (n *Node) rotateRight(parentIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) mergeLeft(parentIndex int, nonleaf bool) {
+func (n *Node[T]) mergeLeft(parentIndex int, nonleaf bool) {
 	p := n.parent
 	n.items.insert(len(n.items), p.items[parentIndex])
 	right := p.children[parentIndex+1]
@@ -422,7 +423,7 @@ func (n *Node) mergeLeft(parentIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) mergeRight(parentIndex int, nonleaf bool) {
+func (n *Node[T]) mergeRight(parentIndex int, nonleaf bool) {
 	p := n.parent
 	leftSibling := p.children[parentIndex-1]
 	leftSibling.items.insert(len(leftSibling.items), p.items[parentIndex-1])
@@ -437,7 +438,7 @@ func (n *Node) mergeRight(parentIndex int, nonleaf bool) {
 	}
 }
 
-func (n *Node) min() *Node {
+func (n *Node[T]) min() *Node[T] {
 	if n == nil {
 		return nil
 	}
@@ -447,7 +448,7 @@ func (n *Node) min() *Node {
 	return n
 }
 
-func (n *Node) max() *Node {
+func (n *Node[T]) max() *Node[T] {
 	if n == nil {
 		return nil
 	}
@@ -457,11 +458,11 @@ func (n *Node) max() *Node {
 	return n
 }
 
-func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
+func (n *Node[T]) split(item T) (median T, right *Node[T], ok bool) {
 	ok = true
 	i := n.minItems()
 	median = n.items[i]
-	right = newNode(n.maxItems())
+	right = newNode[T](n.maxItems())
 	right.items = append(right.items, n.items[i+1:]...)
 	n.items = n.items[:i]
 	if len(n.children) > 0 {
@@ -482,29 +483,30 @@ func (n *Node) split(item Item) (median Item, right *Node, ok bool) {
 }
 
 // Iterator represents an iterator in the B-tree.
-type Iterator struct {
+type Iterator[T Item[T]] struct {
 	index       int
 	parentIndex int
-	node        *Node
+	node        *Node[T]
 }
 
 // Item returns the item of this iterator.
-func (i *Iterator) Item() Item {
+func (i *Iterator[T]) Item() T {
 	if i == nil {
-		return nil
+		var x T
+		return x
 	}
 	return i.node.items[i.index]
 }
 
 // Clone returns the clone of this iterator.
-func (i *Iterator) Clone() *Iterator {
+func (i *Iterator[T]) Clone() *Iterator[T] {
 	if i == nil {
 		return nil
 	}
-	return &Iterator{node: i.node, index: i.index, parentIndex: i.parentIndex}
+	return &Iterator[T]{node: i.node, index: i.index, parentIndex: i.parentIndex}
 }
 
-func (i *Iterator) reset(n *Node, index int) *Iterator {
+func (i *Iterator[T]) reset(n *Node[T], index int) *Iterator[T] {
 	if i == nil || n == nil {
 		return nil
 	}
@@ -515,7 +517,7 @@ func (i *Iterator) reset(n *Node, index int) *Iterator {
 }
 
 // Last returns the last iterator less than this iterator.
-func (i *Iterator) Last() (last *Iterator) {
+func (i *Iterator[T]) Last() (last *Iterator[T]) {
 	if i == nil {
 		return nil
 	}
@@ -543,7 +545,7 @@ func (i *Iterator) Last() (last *Iterator) {
 }
 
 // Next returns the next iterator more than this iterator.
-func (i *Iterator) Next() (next *Iterator) {
+func (i *Iterator[T]) Next() (next *Iterator[T]) {
 	if i == nil {
 		return nil
 	}
@@ -570,27 +572,29 @@ func (i *Iterator) Next() (next *Iterator) {
 	return
 }
 
-type items []Item
+type items[T Item[T]] []T
 
-func (s *items) insert(index int, item Item) {
-	*s = append(*s, nil)
+func (s *items[T]) insert(index int, item T) {
+	var x T
+	*s = append(*s, x)
 	if index < len(*s) {
 		copy((*s)[index+1:], (*s)[index:])
 	}
 	(*s)[index] = item
 }
 
-func (s *items) appendRight(i items) {
+func (s *items[T]) appendRight(i items[T]) {
 	*s = append(*s, i...)
 }
 
-func (s *items) remove(index int) {
+func (s *items[T]) remove(index int) {
 	copy((*s)[index:], (*s)[index+1:])
-	(*s)[len(*s)-1] = nil
+	var x T
+	(*s)[len(*s)-1] = x
 	*s = (*s)[:len(*s)-1]
 }
 
-func (s items) search(item Item) (index int, ok bool) {
+func (s items[T]) search(item T) (index int, ok bool) {
 	i, j := 0, len(s)
 	for i < j {
 		h := int(uint(i+j) >> 1)
@@ -606,9 +610,9 @@ func (s items) search(item Item) (index int, ok bool) {
 	return i, false
 }
 
-type children []*Node
+type children[T Item[T]] []*Node[T]
 
-func (s *children) insert(index int, node *Node) {
+func (s *children[T]) insert(index int, node *Node[T]) {
 	*s = append(*s, nil)
 	if index < len(*s) {
 		copy((*s)[index+1:], (*s)[index:])
@@ -616,11 +620,11 @@ func (s *children) insert(index int, node *Node) {
 	(*s)[index] = node
 }
 
-func (s *children) appendRight(i children) {
+func (s *children[T]) appendRight(i children[T]) {
 	*s = append(*s, i...)
 }
 
-func (s *children) remove(index int) {
+func (s *children[T]) remove(index int) {
 	copy((*s)[index:], (*s)[index+1:])
 	(*s)[len(*s)-1] = nil
 	*s = (*s)[:len(*s)-1]

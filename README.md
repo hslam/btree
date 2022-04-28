@@ -43,7 +43,7 @@ import (
 )
 
 func main() {
-	tree := btree.New(2)
+	tree := btree.New[String](2)
 	str := String("Hello World")
 	tree.Insert(str)
 	fmt.Println(tree.Search(str))
@@ -52,8 +52,8 @@ func main() {
 
 type String string
 
-func (a String) Less(b btree.Item) bool {
-	return a < b.(String)
+func (a String) Less(b String) bool {
+	return a < b
 }
 ```
 
@@ -72,7 +72,7 @@ import (
 )
 
 func main() {
-	tree := btree.New(2)
+	tree := btree.New[Int](2)
 	for i := 0; i < 10; i++ {
 		tree.Insert(Int(i))
 	}
@@ -85,8 +85,8 @@ func main() {
 
 type Int int
 
-func (a Int) Less(b btree.Item) bool {
-	return a < b.(Int)
+func (a Int) Less(b Int) bool {
+	return a < b
 }
 ```
 #### B-Tree
